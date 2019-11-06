@@ -5,6 +5,7 @@ PROGRAM   = vortex_turbulence
 
 SRC_DIR  := ./source
 OBJ_DIR  := ./objects
+OUT_DIR  := ./output
 
 DEFAULT: $(PROGRAM)
 
@@ -59,6 +60,7 @@ OBJECTS := $(NAMES:%.f=$(OBJ_DIR)/%.o)
 
 $(warning Setup directories...)
 $(shell test -d $(OBJ_DIR) || mkdir $(OBJ_DIR))
+$(shell test -d $(OUT_DIR) || mkdir $(OUT_DIR))
 $(shell test -e $(LOG) && rm $(LOG))
 
 # Dont delete the given intermediate files

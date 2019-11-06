@@ -1,3 +1,13 @@
+# Client files
+objects/
+output/
+vortex_structures
+vortex_turbulence
+vortex_penalisation
+
+# Log files
+*.log
+
 # Prerequisites
 *.d
 

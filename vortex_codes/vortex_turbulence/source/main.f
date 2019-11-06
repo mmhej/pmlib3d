@@ -110,7 +110,7 @@ IMPLICIT NONE
     END IF
   ELSE
     ierr = - 1
-    CALL pmlib_write(rank,caller,'Specify one setup file.')
+    CALL pmlib_write(rank,caller,'Specify a setup file.')
     GOTO 9999
   ENDIF
 
@@ -451,7 +451,7 @@ IMPLICIT NONE
     IF (iplot_mesh .NE. 0)THEN
       IF( MOD(itime,iplot_mesh) .EQ. 0)THEN
 
-        WRITE(outfile,'(A,I5.5)') 'mesh_I',itime
+        WRITE(outfile,'(A,I5.5)') './output/mesh_I',itime
         CALL output_mesh(outfile,patch,topo_all%cuboid,mesh,ierr)
 
       END IF
@@ -470,7 +470,7 @@ IMPLICIT NONE
         azi  = 40.0_MK
 !        WRITE(outfile,'(A,I5.5)') 'view_I',itime
 !        WRITE(outfile,'(A)') 'view'
-        WRITE(outfile,'(A,I5.5,A,I3.3)') 'view_I',itime,'_A',0
+        WRITE(outfile,'(A,I5.5,A,I3.3)') './output/view_I',itime,'_A',0
         CALL pmlib_visualise_particles(outfile,topo_all%cuboid,part,vmax, &
                            & foc,dist,azi,ele,zoom,ierr,scl = 0.5_MK)
 
@@ -483,7 +483,7 @@ IMPLICIT NONE
     IF (ioutput_part .NE. 0)THEN
       IF( MOD(itime,ioutput_part) .EQ. 0 .OR. abort)THEN
 
-        WRITE(outfile,'(A,I5.5)') 'part_I',itime
+        WRITE(outfile,'(A,I5.5)') './output/part_I',itime
         CALL output_particles(outfile,topo_all%cuboid,part,ierr)
 
       END IF

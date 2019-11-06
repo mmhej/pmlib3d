@@ -32,8 +32,6 @@ CONTAINS
 
 #include "diagnostics/diagnostics_knot.f"
 
-#include "diagnostics/diagnostics_sphere.f"
-
 #include "diagnostics/diagnostics_spectral.f"
 
 END MODULE mod_diagnostics

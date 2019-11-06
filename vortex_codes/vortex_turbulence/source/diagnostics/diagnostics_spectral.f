@@ -114,7 +114,7 @@ IMPLICIT NONE
   vol = patch%ncell(1)*patch%ncell(2)*patch%ncell(3) * dx(1)*dx(2)*dx(3)
 
 
-  WRITE(outfile,'(A,I5.5,A,I5.5,A)') 'spectrum_I',itime,'_P',rank,'.dat' 
+  WRITE(outfile,'(A,I5.5,A,I5.5,A)') './output/spectrum_I',itime,'_P',rank,'.dat' 
   OPEN(20,FILE = outfile)
 
   DO k = 1, ncell(3)
@@ -175,7 +175,7 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
   IF(rank .EQ. 0)THEN
 
-    WRITE(outfile,'(A)') 'spectrum.gnu' 
+    WRITE(outfile,'(A)') './output/spectrum.gnu' 
     OPEN(17,FILE = outfile)
 
 

@@ -226,7 +226,7 @@ IMPLICIT NONE
         & .OR. abort .OR. itime .EQ. ntime )THEN
         IF( itime .EQ. 0 )THEN
           WRITE(diag_format,'(A,I2,A)') '(',ndiag, 'A)'
-          OPEN(20,FILE = 'diagnostics.dat')
+          OPEN(20,FILE = './output/diagnostics.dat')
           WRITE(20,TRIM(diag_format)) '#               Time', &
                                     & '           Impulse x', &
                                     & '           Impulse y', &
@@ -240,7 +240,7 @@ IMPLICIT NONE
                                     & '            Centroid', &
                                     & '         Ring radius'
         ELSE
-          OPEN(20,FILE = 'diagnostics.dat',POSITION = 'APPEND')
+          OPEN(20,FILE = './output/diagnostics.dat',POSITION = 'APPEND')
         END IF
 
 !      WRITE(diag_format,'(A,I2,A)') '(',ndiag, 'E11.3)'
