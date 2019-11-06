@@ -1,0 +1,1 @@
+mpif90 ./objects/mixedbc.o ./objects/mod_poisson.o -L./../../ -lpmlib -I./objects -I./../..//include -o mixedbc

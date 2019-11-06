@@ -1,0 +1,127 @@
+#---------------------------------------------------------------------------------#
+# <<HEADER>>
+#---------------------------------------------------------------------------------#
+
+#---------------------------------------------------------------------------------#
+#- Citation
+#---------------------------------------------------------------------------------#
+ For use in further scientific work please cite the following
+
+ M. M. Hejlesen, G. Winckelmans and J. H. Walther.
+ "Non-singular Green's functions for the unbounded Poisson equation in one, 
+  two and three dimensions",
+ Applied Mathematics Letters, 89:28-34, 2019.
+
+ M.M. Hejlesen and J.H. Walther, 
+ "A multiresolution method for solving the Poisson equation using high order 
+  regularization", 
+ J. Comp. Phys. 2016
+
+ M.M. Hejlesen, 
+ "A high order regularisation method for solving the Poisson equation 
+  and selected applications using vortex methods", 
+ PhD thesis, Technical University of Denmark, 2016.
+
+ M.M. Hejlesen, P. Koumoutsakos, A. Leonard, and J.H. Walther, 
+ "Iterative Brinkman penalization for remeshed vortex methods", 
+ J. Comp. Phys. 2014
+
+ M.M. Hejlesen, J.T. Rasmussen, P. Chatelain and J.H. Walther, 
+ "A high order solver for the unbounded Poisson equation", 
+ J. Comp. Phys. 252, 458-467, 2013
+
+#---------------------------------------------------------------------------------#
+#- LICENCE
+#---------------------------------------------------------------------------------#
+ Copyright (c) 2014 Technical University of Denmark, 
+                    Department of Mechanical Engineering
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, see <http://www.gnu.org/licenses/>
+
+#---------------------------------------------------------------------------------#
+#- CONTACTS
+#---------------------------------------------------------------------------------#
+ Mads M. Hejlesen:   mmhe@tec.dk
+ Jens H. Walther:    jhwa@mek.dtu.dk
+
+#---------------------------------------------------------------------------------#
+# git repository
+#---------------------------------------------------------------------------------#
+# Source code location
+https://github.com/mmhej/pmlib3d.git
+
+# Clone git into <dir>
+git clone https://github.com/mmhej/pmlib3d.git <dir>
+
+# To see available branches and which branch you are currently on
+git branch
+
+# Create branch called <branch>
+git branch <branch>
+
+# Switch branch to <branch>
+git checkout <branch>
+
+#---------------------------------------------------------------------------------#
+# Commit changes to current git branch
+#---------------------------------------------------------------------------------#
+# see the changes in the local git version
+git status
+
+# add new files to the git repository
+git add <file>
+
+# commit all changes
+git commit -a
+
+# push the local version to the git repository
+git push
+
+#---------------------------------------------------------------------------------#
+# Reset git repository
+#---------------------------------------------------------------------------------#
+# pulls the current version of the git repository
+git pull
+
+# resets the git version to discard local changes
+git reset --hard HEAD
+
+# remove all files that are not in the git repository (this is not necessary)
+git clean -fd
+
+#---------------------------------------------------------------------------------#
+#- INSTALL
+#---------------------------------------------------------------------------------#
+1) compile the pmlib library
+  * go to the pmlib directory
+  * configure "makefile" to the desired fortran compiler
+  * compile pmlib by the "make" command
+
+2) compile the pmlib client
+  * go to the client directory
+  * configure "makefile" to the desired fortran compiler
+  * compile pmlib by the "make" command
+
+3) run the client using the input file "setup_cylinder.in" by:
+$ ./client setup_cylinder.in
+
+#---------------------------------------------------------------------------------#
+# Indexing in pmlib
+#---------------------------------------------------------------------------------#
+west  : 1
+east  : 2
+south : 3
+north : 4
+bottom: 5
+top   : 6

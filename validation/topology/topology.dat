@@ -1,0 +1,59 @@
+#===========================================================================
+## Topology
+#===========================================================================
+
+# Patch type:              2
+# Minimum extend:             0.00    0.00    0.00
+# Maximum extend:             1.00    1.00    1.00
+# Resolution:                1/  64
+# Number of mesh cells:         64      64      64
+# FFT-seq:                 1 2 3
+
+#---------------------------------------------------------------------------
+# Topology for processor:    0
+#---------------------------------------------------------------------------
+
+#  Number of particles:           0
+#  Minimum extend:             0.00    0.00    0.00
+#  Maximum extend:             1.00    0.50    0.50
+#  Number of mesh cells:         64      32      32
+#  Number of ghost cells:     4   4   4   2   4   2
+#  Boundary conditions:       0   0   0   1   0   1
+#  Neighbours:               -1  -1  -1   1  -1   2
+
+#---------------------------------------------------------------------------
+# Topology for processor:    1
+#---------------------------------------------------------------------------
+
+#  Number of particles:           0
+#  Minimum extend:             0.00    0.50    0.00
+#  Maximum extend:             1.00    1.00    0.50
+#  Number of mesh cells:         64      32      32
+#  Number of ghost cells:     4   4   2   4   4   2
+#  Boundary conditions:       0   0   1   0   0   1
+#  Neighbours:               -1  -1   0  -1  -1   3
+
+#---------------------------------------------------------------------------
+# Topology for processor:    2
+#---------------------------------------------------------------------------
+
+#  Number of particles:           0
+#  Minimum extend:             0.00    0.00    0.50
+#  Maximum extend:             1.00    0.50    1.00
+#  Number of mesh cells:         64      32      32
+#  Number of ghost cells:     4   4   4   2   2   4
+#  Boundary conditions:       0   0   0   1   1   0
+#  Neighbours:               -1  -1  -1   3   0  -1
+
+#---------------------------------------------------------------------------
+# Topology for processor:    3
+#---------------------------------------------------------------------------
+
+#  Number of particles:           0
+#  Minimum extend:             0.00    0.50    0.50
+#  Maximum extend:             1.00    1.00    1.00
+#  Number of mesh cells:         64      32      32
+#  Number of ghost cells:     4   4   2   4   2   4
+#  Boundary conditions:       0   0   1   0   1   0
+#  Neighbours:               -1  -1   2  -1   1  -1
+
