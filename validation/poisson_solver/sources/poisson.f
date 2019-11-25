@@ -13,8 +13,10 @@ USE pmlib_mod_write
 USE pmlib_mod_patch
 USE pmlib_mod_topology
 USE pmlib_mod_mesh
-USE pmlib_mod_poisson
+!USE pmlib_mod_poisson
 USE pmlib_mod_output
+
+USE poisson_solver_module
 
 IMPLICIT NONE
 !---------------------------------------------------------------------------------!
@@ -36,7 +38,7 @@ IMPLICIT NONE
   INTEGER                                      :: name_len
 
   REAL(MK),DIMENSION(ndim)                     :: xmin, dx
-  INTEGER,DIMENSION(ndim)                      :: ncell
+  INTEGER,DIMENSION(ndim)                      :: ncell, offset
   INTEGER,DIMENSION(2*ndim)                    :: nghost
 
   CHARACTER(LEN=256)                           :: pltfile
@@ -88,6 +90,7 @@ IMPLICIT NONE
   CALL MPI_COMM_SIZE(comm,nproc,ierr)
   CALL MPI_GET_PROCESSOR_NAME(nodename, name_len, ierr)
   WRITE(*,*) 'rank: ',rank, ' starting on "',nodename(1:name_len),'"'
+  CALL MPI_BARRIER(comm,ierr)
 
   mpi_comm  = comm
   mpi_rank  = rank
@@ -127,11 +130,11 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Setup convergence parameters
 !---------------------------------------------------------------------------------!
-  nn = 2
+  nn = 1
   ALLOCATE( nx(nn), dxs(nn), global_error_vel(nn), global_error_vort(nn) )
-  nx = (/ 32, 64 /) 
+!  nx = (/ 32, 64 /) 
 !  nx = (/ 16, 32, 64 /)
-!  nx = 32
+  nx = 32
 
 !---------------------------------------------------------------------------------!
 ! Loop through different resolutions
@@ -179,13 +182,18 @@ IMPLICIT NONE
     ENDIF
 
 !---------------------------------------------------------------------------------!
-! Setup Greens function
+! Setup Poisson solver
 !---------------------------------------------------------------------------------!
-  CALL pmlib_poisson_setup(patch,topo_all,mesh,ierr)
-  IF (ierr .NE. 0) THEN
-    CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
-    GOTO 9999
-  ENDIF
+    ALLOCATE( poisson_solver%partition( 0:nproc-1 ) )
+    offset = (/ 1, 1, 1 /)
+    DO i = 0,nproc-1
+      poisson_solver%partition(i)%ncell = topo_all%cuboid(i)%ncell
+      poisson_solver%partition(i)%icell = topo_all%cuboid(i)%icell-offset
+      poisson_solver%partition(i)%dx    = topo_all%cuboid(i)%dx
+    END DO
+
+    CALL poisson_solver_setup3d( patch%ncell, patch%bound_cond, patch%dx )
+    CALL poisson_solver_set_return_curl( .TRUE. ) ! specify lhs operator
 
 !---------------------------------------------------------------------------------!
 ! Setup initial vorticity field
@@ -265,12 +273,9 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Solve poisson
 !---------------------------------------------------------------------------------!
-  CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                          & reg_vort = .TRUE., reproj = .FALSE.)
-  IF (ierr .NE. 0) THEN
-    CALL pmlib_write(rank,caller,'Failed to solve the Poisson equation.')
-    GOTO 9999
-  ENDIF
+	CALL poisson_solver_push( mesh%vort, offset )
+	CALL poisson_solver_solve3d()
+	CALL poisson_solver_pull( mesh%vort , mesh%vel, offset )
 
 !---------------------------------------------------------------------------------!
 ! Calculate error
@@ -432,7 +437,12 @@ IMPLICIT NONE
     dxs(n) = MAXVAL(patch%dx)
   END IF
 
-  END DO
+!---------------------------------------------------------------------------------!
+! Finalise poisson solver
+!---------------------------------------------------------------------------------!
+	CALL poisson_solver_finalise()
+
+  END DO ! Convergence loop
 
 
   IF(rank .EQ. 0)THEN

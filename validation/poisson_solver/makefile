@@ -1,40 +1,30 @@
 #---------------------------------------------------------------------------------#
-# makefile
+# pmlib_client makefile
 #---------------------------------------------------------------------------------#
-PROGRAM   = vortex_structures
+# <<HEADER>>
+#---------------------------------------------------------------------------------#
+PROGRAM   = poisson
 
-SRC_DIR  := ./source
+SRC_DIR  := ./sources
 OBJ_DIR  := ./objects
-OUT_DIR  := ./output
 
 DEFAULT: $(PROGRAM)
 
 #---------------------------------------------------------------------------------#
 # Path to libraries
 #---------------------------------------------------------------------------------#
-PMLIB_DIR = ./../../
-POISSON_DIR = /home/mmh/development/poisson_solver/fortran
+PMDIR      = ./../..
+POISSONDIR = /home/mmh/development/poisson_solver/fortran
 
 #---------------------------------------------------------------------------------#
 # Flags and libraries for compiling
 #---------------------------------------------------------------------------------#
-# Fortran compiler
 FC      = mpif90
+FFLAGS  = -O3 -ffree-form -ffree-line-length-none -ffree-line-length-none
 
-# Fortran compiler flags
-FFLAGS  = -O3 -ffree-form -ffree-line-length-none
+LDFLAGS = -L$(PMDIR) -lpmlib -L$(POISSONDIR) -lpoissonsolver
 
-# Library flags
-LDFLAGS = -L$(PMLIB_DIR) -lpmlib -L$(POISSON_DIR) -lpoissonsolver
-
-# Include paths
-INCL    = -I./objects -I$(PMLIB_DIR)/include -I$(POISSON_DIR)/include
-
-# Preprocessor compiler
-CPP      = cpp
-
-# Preprocessor compiler flags
-CPPFLAGS = 
+INCL    = -I./objects -I$(PMDIR)/include -I$(POISSONDIR)/include
 
 #---------------------------------------------------------------------------------#
 # write scripts
@@ -52,9 +42,7 @@ OBJECTS := $(NAMES:%.f=$(OBJ_DIR)/%.o)
 
 $(warning Setup directories...)
 $(shell test -d $(OBJ_DIR) || mkdir $(OBJ_DIR))
-$(shell test -d $(OUT_DIR) || mkdir $(OUT_DIR))
 $(shell test -e $(LOG) && rm $(LOG))
-
 
 # Dont delete the given intermediate files
 .SECONDARY:
@@ -62,7 +50,7 @@ $(shell test -e $(LOG) && rm $(LOG))
 #---------------------------------------------------------------------------------#
 # Preprocess
 #---------------------------------------------------------------------------------#
-CPCMD = $(CPP) $(CPPFLAGS) $< $@
+CPCMD = cpp $< $@
 $(OBJ_DIR)/%.f : $(SRC_DIR)/%.f
 	@printf "  CPP  %-42s" $<; \
 	$(RUN) "$(CPCMD)" $(LOG) "Preprocessing Error"
@@ -87,37 +75,20 @@ $(PROGRAM): $(OBJECTS)
 #---------------------------------------------------------------------------------#
 # Explicit dependencies
 #---------------------------------------------------------------------------------#
-$(OBJ_DIR)/main.f:\
-  $(PMLIB_DIR)/*.a\
-  $(POISSON_DIR)/*.a
-$(OBJ_DIR)/main.o:\
-  $(OBJ_DIR)/mod_parameters.o\
-  $(OBJ_DIR)/mod_input.o\
-  $(OBJ_DIR)/mod_output.o\
-  $(OBJ_DIR)/mod_flowcases.o\
-  $(OBJ_DIR)/mod_particle_derivatives.o\
-  $(OBJ_DIR)/mod_diagnostics.o
+$(OBJ_DIR)/poisson.f:\
+  $(PMDIR)/*.a\
+  $(POISSONDIR)/*.a
+$(OBJ_DIR)/poisson.o:\
+  $(OBJ_DIR)/mod_output.o
 #A
 #B
 #C
 #D
-$(OBJ_DIR)/mod_diagnostics.f:\
-  $(SRC_DIR)/diagnostics/*.f
-$(OBJ_DIR)/mod_diagnostics.o:\
-  $(OBJ_DIR)/mod_parameters.o
 #E
 #F
-$(OBJ_DIR)/mod_flowcases.f:\
-  $(SRC_DIR)/flowcases/*.f
-$(OBJ_DIR)/mod_flowcases.o:\
-  $(OBJ_DIR)/mod_parameters.o
 #G
 #H
 #I
-$(OBJ_DIR)/mod_input.f:\
-  $(SRC_DIR)/input/*.f
-$(OBJ_DIR)/mod_input.o:\
-  $(OBJ_DIR)/mod_parameters.o
 #J
 #K
 #L
@@ -125,17 +96,11 @@ $(OBJ_DIR)/mod_input.o:\
 #N
 #O
 $(OBJ_DIR)/mod_output.f:\
-  $(SRC_DIR)/output/*.f
-$(OBJ_DIR)/mod_output.o:\
-  $(OBJ_DIR)/mod_parameters.o
+  ./sources/output/*.f
+$(OBJ_DIR)/mod_output.o:
 #P
-$(OBJ_DIR)/mod_parameters.o:
 #Q
 #R
-$(OBJ_DIR)/mod_particle_derivatives.f:\
-  $(SRC_DIR)/particle_derivatives/*.f
-$(OBJ_DIR)/mod_particle_derivatives.o:\
-  $(OBJ_DIR)/mod_parameters.o
 #S
 #T
 #U
@@ -149,8 +114,8 @@ $(OBJ_DIR)/mod_particle_derivatives.o:\
 # Clean
 #---------------------------------------------------------------------------------#
 clean:
-	rm -fr $(OBJ_DIR)
-	rm -f  *.mod 2> $(LOG)
-	rm -f  $(PROGRAM)
 	rm -f  $(LOG)
+	rm -fr $(OBJ_DIR)
+	rm -f  *.mod 2> /dev/null
+	rm -f  $(PROGRAM)
 
