@@ -432,6 +432,17 @@ IMPLICIT NONE
       END IF
 
 !---------------------------------------------------------------------------------!
+! Map ghost cells
+!---------------------------------------------------------------------------------!
+      DO i = 1,ndim
+        CALL pmlib_mesh_map_ghost(topo_all%cuboid,i,3,ierr,incl_edges = .FALSE.)
+        CALL pmlib_comm_pack(mesh%vel,ierr)
+        CALL pmlib_comm_send(ierr)
+        CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vel,0,ierr,clear=.FALSE.)
+        CALL pmlib_comm_finalise(ierr)
+      END DO
+
+!---------------------------------------------------------------------------------!
 ! Calculate particle derivative of the vorticity
 !---------------------------------------------------------------------------------!
       CALL part_deriv_vorticity(topo_all%cuboid,mesh,ierr)
