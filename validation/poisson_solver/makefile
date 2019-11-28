@@ -14,7 +14,7 @@ DEFAULT: $(PROGRAM)
 # Path to libraries
 #---------------------------------------------------------------------------------#
 PMDIR      = ./../..
-POISSONDIR = /home/mmh/development/poisson_solver/fortran
+POISSONDIR = ./../../../poisson_solver/fortran
 
 #---------------------------------------------------------------------------------#
 # Flags and libraries for compiling

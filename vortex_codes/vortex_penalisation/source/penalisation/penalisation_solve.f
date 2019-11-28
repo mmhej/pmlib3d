@@ -12,6 +12,8 @@ USE pmlib_mod_poisson
 USE pmlib_mod_communication
 USE pmlib_mod_output
 
+USE poisson_solver_module
+
 IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Arguments
@@ -29,7 +31,7 @@ IMPLICIT NONE
   REAL(MK)                                     :: px,py,pz
 
   REAL(MK),DIMENSION(ndim)                     :: xmin, xmax, dx
-  INTEGER,DIMENSION(ndim)                      :: ncell
+  INTEGER,DIMENSION(ndim)                      :: ncell, offset
   INTEGER,DIMENSION(2*ndim)                    :: nghost
 
   REAL(MK),DIMENSION(ndim)                     :: force, dforce, sum_dforce
@@ -56,6 +58,7 @@ IMPLICIT NONE
   npen        = 0
   force       = 0.0_MK
   sum_vel_pen = 0.0_MK
+  offset = (/1,1,1/)
 
 !---------------------------------------------------------------------------------!
 ! Map velocity to penalisation mesh (overwrite)
@@ -266,8 +269,23 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Solve the Poisson equation
 !---------------------------------------------------------------------------------!
-    CALL pmlib_poisson_solve( patch_penal,topo_penal,mesh_penal,ierr, &
-                              & reg_vort = .FALSE.,  reproj = .FALSE. )
+    CALL poisson_solver_set_reprojection(2,.FALSE.)
+    CALL poisson_solver_push(2,offset,mesh_penal%vort)
+    CALL poisson_solver_solve3d(2)
+    CALL poisson_solver_pull(2,offset,mesh_penal%vel)
+
+
+! Map ghost cells
+    DO i = 1,ndim
+      CALL pmlib_mesh_map_ghost(topo_penal%cuboid,i,3,ierr,incl_edges = .FALSE.)
+      CALL pmlib_comm_pack(mesh_penal%vel,ierr)
+      CALL pmlib_comm_send(ierr)
+      CALL pmlib_comm_unpack(topo_penal%cuboid,mesh_penal%vel,0,ierr,clear=.FALSE.)
+      CALL pmlib_comm_finalise(ierr)
+    END DO
+
+!    CALL pmlib_poisson_solve( patch_penal,topo_penal,mesh_penal,ierr, &
+!                              & reg_vort = .FALSE.,  reproj = .FALSE. )
     IF (ierr .NE. 0) THEN
       CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
       GOTO 9999
@@ -352,15 +370,34 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Recalculate the velocity field on the full domain
 !---------------------------------------------------------------------------------!
-  IF(reproject)THEN
-    CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                            & reg_vort = .TRUE.,reproj = .TRUE.)
-  ELSEIF(regularise_vort)THEN
-    CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                            & reg_vort = .TRUE.,reproj = .FALSE.)
+  IF(reproject )THEN
+    CALL poisson_solver_set_reprojection(1,.TRUE.)
+    CALL poisson_solver_push(1,offset,mesh%vort)
+    CALL poisson_solver_solve3d(1)
+    CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
+! Map ghost cells
+    DO i = 1,ndim
+      CALL pmlib_mesh_map_ghost(topo_all%cuboid,i,6,ierr,incl_edges = .FALSE.)
+      CALL pmlib_comm_pack(mesh%vort,ierr)
+      CALL pmlib_comm_pack(mesh%vel,ierr)
+      CALL pmlib_comm_send(ierr)
+      CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vel,0,ierr,clear=.FALSE.)
+      CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vort,0,ierr,clear=.FALSE.)
+      CALL pmlib_comm_finalise(ierr)
+    END DO
   ELSE
-    CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                            & reg_vort = .FALSE.,reproj = .FALSE.)
+    CALL poisson_solver_set_reprojection(1,.FALSE.)
+    CALL poisson_solver_push(1,offset,mesh%vort)
+    CALL poisson_solver_solve3d(1)
+    CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
+! Map ghost cells
+    DO i = 1,ndim
+      CALL pmlib_mesh_map_ghost(topo_all%cuboid,i,3,ierr,incl_edges = .FALSE.)
+      CALL pmlib_comm_pack(mesh%vel,ierr)
+      CALL pmlib_comm_send(ierr)
+      CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vel,0,ierr,clear=.FALSE.)
+      CALL pmlib_comm_finalise(ierr)
+    END DO
   END IF
   IF (ierr .NE. 0) THEN
     CALL pmlib_write(rank,caller,'Failed to solve Poisson equation.')

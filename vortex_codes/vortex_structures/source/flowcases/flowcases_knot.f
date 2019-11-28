@@ -11,7 +11,6 @@ USE pmlib_mod_patch
 USE pmlib_mod_topology
 USE pmlib_mod_mesh
 USE pmlib_mod_interpolation
-!USE pmlib_mod_regularise
 
 USE poisson_solver_module
 
@@ -150,11 +149,10 @@ IMPLICIT NONE
                                  & mesh%vort, ierr, clear = .TRUE.)
 
 ! Regularise mesh to get Gauss distribution of radius sigma
-!  CALL pmlib_regularise(patch,topo_all,mesh%vort,2,sigma,ierr)
   offset = (/ 1, 1, 1 /)
-  CALL poisson_solver_push( mesh%vort, offset )
-  CALL poisson_solver_smooth3d( sigma )
-  CALL poisson_solver_pull( mesh%vort , mesh%vel, offset )
+  CALL poisson_solver_push(1,offset,mesh%vort )
+  CALL poisson_solver_smooth3d(1,sigma)
+  CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
 
 !---------------------------------------------------------------------------------!
 ! Toggle penalisation

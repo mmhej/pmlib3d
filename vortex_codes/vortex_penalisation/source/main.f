@@ -22,9 +22,11 @@ USE pmlib_mod_regularise
 USE pmlib_mod_remesh
 USE pmlib_mod_repatch
 USE pmlib_mod_interpolation
-USE pmlib_mod_poisson
+!USE pmlib_mod_poisson
 USE pmlib_mod_output
 USE pmlib_mod_visualise
+
+USE poisson_solver_module
 
 IMPLICIT NONE
 !---------------------------------------------------------------------------------!
@@ -51,7 +53,7 @@ IMPLICIT NONE
   REAL(MK)                                     :: timing_start, timing_stop
 
   REAL(MK),DIMENSION(ndim)                     :: xmin, dx
-  INTEGER,DIMENSION(ndim)                      :: ncell
+  INTEGER,DIMENSION(ndim)                      :: ncell, offset
   INTEGER,DIMENSION(2*ndim)                    :: nghost
 
 !---------------------------------------------------------------------------------!
@@ -200,11 +202,27 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Setup Poisson solver
 !---------------------------------------------------------------------------------!
-    CALL pmlib_poisson_setup(patch,topo_all,mesh,ierr)
-    IF (ierr .NE. 0) THEN
-      CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
-      GOTO 9999
-    ENDIF
+!    CALL pmlib_poisson_setup(patch,topo_all,mesh,ierr)
+!    IF (ierr .NE. 0) THEN
+!      CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
+!      GOTO 9999
+!    ENDIF
+
+! Initialise 2 poisson solvers
+    CALL poisson_solver_initialise( 2 )
+
+! Store cuboid partition to solver 1
+    ALLOCATE( poisson_solver(1)%partition( 0:nproc-1 ) ) 
+    offset = (/ 1, 1, 1 /)
+    DO i = 0,nproc-1
+      poisson_solver(1)%partition(i)%ncell = topo_all%cuboid(i)%ncell
+      poisson_solver(1)%partition(i)%icell = topo_all%cuboid(i)%icell-offset
+      poisson_solver(1)%partition(i)%dx    = topo_all%cuboid(i)%dx
+    END DO
+
+! Setup solver 1
+    CALL poisson_solver_setup3d(1,patch%ncell,patch%bound_cond,patch%dx)
+    CALL poisson_solver_set_return_curl(1,.TRUE.) ! specify lhs operator
 
 !---------------------------------------------------------------------------------!
 ! Set up flow case
@@ -355,14 +373,33 @@ IMPLICIT NONE
 ! Calculate right-hand side of the trajectory equation
 !---------------------------------------------------------------------------------!
       IF(reproject .OR. (itime .EQ. 0 .AND. itimestage .EQ. 1) )THEN
-        CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                              & reg_vort = .TRUE.,reproj = .TRUE.)
-      ELSEIF(regularise_vort)THEN
-        CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                              & reg_vort = .TRUE.,reproj = .FALSE.)
+        CALL poisson_solver_set_reprojection(1,.TRUE.)
+        CALL poisson_solver_push(1,offset,mesh%vort)
+        CALL poisson_solver_solve3d(1)
+        CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
+! Map ghost cells
+        DO i = 1,ndim
+          CALL pmlib_mesh_map_ghost(topo_all%cuboid,i,6,ierr,incl_edges = .FALSE.)
+          CALL pmlib_comm_pack(mesh%vort,ierr)
+          CALL pmlib_comm_pack(mesh%vel,ierr)
+          CALL pmlib_comm_send(ierr)
+          CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vel,0,ierr,clear=.FALSE.)
+          CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vort,0,ierr,clear=.FALSE.)
+          CALL pmlib_comm_finalise(ierr)
+        END DO
       ELSE
-        CALL pmlib_poisson_solve( patch,topo_all,mesh,ierr, &
-                              & reg_vort = .FALSE.,reproj = .FALSE.)
+        CALL poisson_solver_set_reprojection(1,.FALSE.)
+        CALL poisson_solver_push(1,offset,mesh%vort)
+        CALL poisson_solver_solve3d(1)
+        CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
+! Map ghost cells
+        DO i = 1,ndim
+          CALL pmlib_mesh_map_ghost(topo_all%cuboid,i,3,ierr,incl_edges = .FALSE.)
+          CALL pmlib_comm_pack(mesh%vel,ierr)
+          CALL pmlib_comm_send(ierr)
+          CALL pmlib_comm_unpack(topo_all%cuboid,mesh%vel,0,ierr,clear=.FALSE.)
+          CALL pmlib_comm_finalise(ierr)
+        END DO
       END IF
       IF (ierr .NE. 0) THEN
         CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
@@ -510,6 +547,12 @@ IMPLICIT NONE
   END DO !itime
 
  1111 CONTINUE
+
+!---------------------------------------------------------------------------------!
+! Finalise poisson solver
+!---------------------------------------------------------------------------------!
+  CALL poisson_solver_finalise(1)
+  CALL poisson_solver_finalise(2)
 
 !---------------------------------------------------------------------------------!
 ! Finalise MPI

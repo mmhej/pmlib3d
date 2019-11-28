@@ -13,6 +13,7 @@ DEFAULT: $(PROGRAM)
 # Path to libraries
 #---------------------------------------------------------------------------------#
 PMLIB_DIR = ./../../
+POISSON_DIR = ./../../../poisson_solver/fortran
 
 #---------------------------------------------------------------------------------#
 # Flags and libraries for compiling
@@ -24,10 +25,10 @@ FC      = mpif90
 FFLAGS  = -O3 -ffree-form -ffree-line-length-none
 
 # Library flags
-LDFLAGS = -L$(PMLIB_DIR) -lpmlib
+LDFLAGS = -L$(PMLIB_DIR) -lpmlib -L$(POISSON_DIR) -lpoissonsolver
 
 # Include paths
-INCL    = -I./objects -I$(PMLIB_DIR)/include
+INCL    = -I./objects -I$(PMLIB_DIR)/include -I$(POISSON_DIR)/include
 
 # Preprocessor compiler
 CPP      = cpp
@@ -87,7 +88,8 @@ $(PROGRAM): $(OBJECTS)
 # Explicit dependencies
 #---------------------------------------------------------------------------------#
 $(OBJ_DIR)/main.f:\
-  $(PMLIB_DIR)/*.a
+  $(PMLIB_DIR)/*.a\
+  $(POISSON_DIR)/*.a
 $(OBJ_DIR)/main.o:\
   $(OBJ_DIR)/mod_parameters.o\
   $(OBJ_DIR)/mod_input.o\

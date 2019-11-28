@@ -11,6 +11,8 @@ USE pmlib_mod_patch
 USE pmlib_mod_topology
 USE pmlib_mod_poisson
 
+USE poisson_solver_module
+
 IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Arguments
@@ -28,7 +30,7 @@ IMPLICIT NONE
   INTEGER                                      :: nbuff, nvar
 
   REAL(MK),DIMENSION(ndim)                     :: xmin, xmax, dx
-  INTEGER,DIMENSION(ndim)                      :: ncell
+  INTEGER,DIMENSION(ndim)                      :: ncell, offset
   INTEGER,DIMENSION(2*ndim)                    :: nghost
 
   REAL(MK)                                     :: r,r0
@@ -177,11 +179,24 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
 ! Setup Poisson solver on the penalisation mesh
 !---------------------------------------------------------------------------------!
-  CALL pmlib_poisson_setup(patch_penal,topo_penal,mesh_penal,ierr)
-  IF (ierr .NE. 0) THEN
-    CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
-    GOTO 9999
-  ENDIF
+! Store cuboid partition to solver 2
+    ALLOCATE( poisson_solver(2)%partition( 0:nproc-1 ) ) 
+    offset = (/ 1, 1, 1 /)
+    DO i = 0,nproc-1
+      poisson_solver(2)%partition(i)%ncell = topo_penal%cuboid(i)%ncell
+      poisson_solver(2)%partition(i)%icell = topo_penal%cuboid(i)%icell-offset
+      poisson_solver(2)%partition(i)%dx    = topo_penal%cuboid(i)%dx
+    END DO
+
+! Setup solver 2
+    CALL poisson_solver_setup3d(2,patch%ncell,patch%bound_cond,patch%dx)
+    CALL poisson_solver_set_return_curl(2,.TRUE.) ! specify lhs operator
+
+!  CALL pmlib_poisson_setup(patch_penal,topo_penal,mesh_penal,ierr)
+!  IF (ierr .NE. 0) THEN
+!    CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
+!    GOTO 9999
+!  ENDIF
 
 !---------------------------------------------------------------------------------!
 ! Toggle penalisation
