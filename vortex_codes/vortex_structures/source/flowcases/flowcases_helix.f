@@ -48,7 +48,7 @@ IMPLICIT NONE
   REAL(MK)                                 :: circ
   REAL(MK)                                 :: nrev
   REAL(MK)                                 :: norm
-  REAL(MK)                                 :: x_pert_amp, x_pert_freq
+  REAL(MK)                                 :: z_pert_amp, z_pert_freq
   REAL(MK)                                 :: r_pert_amp, r_pert_freq
 
   REAL(MK)                                 :: sigma
@@ -70,13 +70,13 @@ IMPLICIT NONE
   circ     = 1.0_MK
   vort_max = circ/(2.0_MK*PI*sigma**2)
 
-  x_pert_amp  = 0.01_MK*r0
-  x_pert_freq = 4.0_MK
+  z_pert_amp  = 0.01_MK*r0
+  z_pert_freq = 4.0_MK
 
   r_pert_amp  = 0.00_MK*r0
   r_pert_freq = 0.0_MK
 
-  len_domain = patch%xmax(1) - patch%xmin(1)
+  len_domain = patch%xmax(3) - patch%xmin(3)
 
   dx     = topo_all%cuboid(rank)%dx
   xmin   = topo_all%cuboid(rank)%xmin
@@ -96,12 +96,13 @@ IMPLICIT NONE
   DO i = 1,npart
     theta = ( REAL(i,MK) - 0.5_MK )/REAL(npart,MK) *(2.0_MK*PI)
 
-    px = len_domain*theta/(2.0_MK*PI) + patch%xmin(1) + & 
-       & x_pert_amp * SIN(nrev * x_pert_freq * theta)
-    py = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) &
+    px = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) &
        & * r0 * COS(nrev*theta)
-    pz = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) & 
+    py = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) & 
        & * r0 * SIN(nrev*theta)
+    pz = len_domain*theta/(2.0_MK*PI) + patch%xmin(3) + & 
+       & z_pert_amp * SIN(nrev * z_pert_freq * theta)
+
 
     IF( px .GE. xmin(1) .AND. px .LT. xmax(1) .AND. & 
       & py .GE. xmin(2) .AND. py .LT. xmax(2) .AND. & 
@@ -120,26 +121,26 @@ IMPLICIT NONE
     theta1 = ( REAL(i,MK) - 1.0_MK )/REAL(npart,MK) *(2.0_MK*PI)
     theta2 = ( REAL(i,MK) )/REAL(npart,MK) *(2.0_MK*PI)
 
-    px = len_domain*theta/(2.0_MK*PI) + patch%xmin(1) + & 
-       & x_pert_amp * SIN(nrev * x_pert_freq * theta)
-    py = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) &
+    px = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) &
        & * r0 * COS(nrev*theta)
-    pz = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) & 
+    py = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta) ) & 
        & * r0 * SIN(nrev*theta)
+    pz = len_domain*theta/(2.0_MK*PI) + patch%xmin(3) + & 
+       & z_pert_amp * SIN(nrev * z_pert_freq * theta)
 
-    px1 = len_domain*theta1/(2.0_MK*PI) + patch%xmin(1) + & 
-       & x_pert_amp * SIN(nrev * x_pert_freq * theta1)
-    py1 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta1) ) &
+    px1 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta1) ) &
        & * r0 * COS(nrev*theta1)
-    pz1 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta1) ) & 
+    py1 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta1) ) & 
        & * r0 * SIN(nrev*theta1)
+    pz1 = len_domain*theta1/(2.0_MK*PI) + patch%xmin(3) + & 
+       & z_pert_amp * SIN(nrev * z_pert_freq * theta1)
 
-    px2 = len_domain*theta2/(2.0_MK*PI) + patch%xmin(1) + & 
-       & x_pert_amp * SIN(nrev * x_pert_freq * theta2)
-    py2 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta2) ) &
+    px2 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta2) ) &
        & * r0 * COS(nrev*theta2)
-    pz2 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta2) ) & 
+    py2 = ( 1.0_MK +  r_pert_amp * SIN(nrev*r_pert_freq*theta2) ) & 
        & * r0 * SIN(nrev*theta2)
+    pz2 = len_domain*theta2/(2.0_MK*PI) + patch%xmin(3) + & 
+       & z_pert_amp * SIN(nrev * z_pert_freq * theta2)
 
     IF( px .GE. xmin(1) .AND. px .LT. xmax(1) .AND. & 
       & py .GE. xmin(2) .AND. py .LT. xmax(2) .AND. & 
@@ -152,20 +153,20 @@ IMPLICIT NONE
 
       len_segment = SQRT( (px2 - px1)**2 + (py2 - py1)**2 + (pz2 - pz1)**2 ) 
 
-      part_circ(1,inp) = len_domain/(2.0_MK*PI) + x_pert_amp * nrev & 
-                       & * x_pert_freq * COS(nrev*x_pert_freq *theta)
-      part_circ(2,inp) = r_pert_amp * r_pert_freq * nrev * r0 &
+      part_circ(1,inp) = r_pert_amp * r_pert_freq * nrev * r0 &
                        & * COS(nrev*r_pert_freq*theta) &
                        & * COS(nrev * theta) - r0 * nrev & 
                        & * (1.0_MK + r_pert_amp & 
                        & * SIN(nrev*r_pert_freq*theta) ) &
                        & * SIN(nrev * theta)
-      part_circ(3,inp) = r_pert_amp * r_pert_freq * nrev * r0 &
+      part_circ(2,inp) = r_pert_amp * r_pert_freq * nrev * r0 &
                        & * COS(nrev*r_pert_freq*theta) &
                        & * SIN(nrev * theta) + r0 * nrev &
                        & * (1.0_MK + r_pert_amp &
                        & * SIN(nrev*r_pert_freq*theta) ) &
                        & * COS(nrev * theta);
+      part_circ(3,inp) = len_domain/(2.0_MK*PI) + z_pert_amp * nrev & 
+                       & * z_pert_freq * COS(nrev*z_pert_freq *theta)
 
       norm = SQRT( part_circ(1,inp)**2 + &
                  & part_circ(2,inp)**2 + &

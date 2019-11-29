@@ -213,7 +213,8 @@ IMPLICIT NONE
     END DO
 
 ! Setup solver 1
-    CALL poisson_solver_setup3d(1,patch%ncell,patch%bound_cond,patch%dx)
+    CALL poisson_solver_setup3d(1,patch%ncell,patch%bound_cond,patch%dx, &
+                                pmlib_poisson_order )
     CALL poisson_solver_set_return_curl(1,.TRUE.) ! specify lhs operator
 
 !---------------------------------------------------------------------------------!
@@ -358,6 +359,21 @@ IMPLICIT NONE
                           & repatch_trunc*vort_max ,extend,ierr )
         CALL pmlib_interp_particle_mesh( topo_all%cuboid,part%pos,part%vort, &
                                        & mesh%vort, ierr, clear = .TRUE.)
+
+! Store cuboid partition to solver 1
+        CALL poisson_solver_finalise(1)
+        ALLOCATE( poisson_solver(1)%partition( 0:nproc-1 ) ) 
+        offset = (/ 1, 1, 1 /)
+        DO i = 0,nproc-1
+          poisson_solver(1)%partition(i)%ncell = topo_all%cuboid(i)%ncell
+          poisson_solver(1)%partition(i)%icell = topo_all%cuboid(i)%icell-offset
+          poisson_solver(1)%partition(i)%dx    = topo_all%cuboid(i)%dx
+        END DO
+
+! Setup solver 1
+        CALL poisson_solver_setup3d(1,patch%ncell,patch%bound_cond,patch%dx)
+        CALL poisson_solver_set_return_curl(1,.TRUE.) ! specify lhs operator
+
         IF (ierr .NE. 0) THEN
           CALL pmlib_write(rank,caller,'Failed to re-patch.')
           GOTO 9999
@@ -369,8 +385,15 @@ IMPLICIT NONE
 !---------------------------------------------------------------------------------!
       IF(reproject .OR. (itime .EQ. 0 .AND. itimestage .EQ. 1) )THEN
         CALL poisson_solver_set_reprojection(1,.TRUE.)
-        CALL poisson_solver_push(1,offset,mesh%vort)
-        CALL poisson_solver_solve3d(1)
+      ELSE
+        CALL poisson_solver_set_reprojection(1,.FALSE.)
+      END IF
+
+      CALL poisson_solver_push(1,offset,mesh%vort)
+      CALL poisson_solver_solve3d(1)
+
+      IF(regularise_vort .OR. reproject &
+                         .OR. (itime .EQ. 0 .AND. itimestage .EQ. 1) )THEN
         CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
 ! Map ghost cells
         DO i = 1,ndim
@@ -383,10 +406,7 @@ IMPLICIT NONE
           CALL pmlib_comm_finalise(ierr)
         END DO
       ELSE
-        CALL poisson_solver_set_reprojection(1,.FALSE.)
-        CALL poisson_solver_push(1,offset,mesh%vort)
-        CALL poisson_solver_solve3d(1)
-        CALL poisson_solver_pull(1,offset,mesh%vel,mesh%vort)
+        CALL poisson_solver_pull(1,offset,mesh%vel)
 ! Map ghost cells
         DO i = 1,ndim
           CALL pmlib_mesh_map_ghost(topo_all%cuboid,i,3,ierr,incl_edges = .FALSE.)
@@ -396,7 +416,6 @@ IMPLICIT NONE
           CALL pmlib_comm_finalise(ierr)
         END DO
       END IF
-
       IF (ierr .NE. 0) THEN
         CALL pmlib_write(rank,caller,'Failed to set up Poisson solver.')
         GOTO 9999
